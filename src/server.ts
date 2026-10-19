@@ -5,6 +5,8 @@ import cors from "cors";
 import connectDB from "./config/connectDB.js";
 import ContactModal from "./models/contact.model.js"
 import type { IContactCreate } from "./interface/index.js";
+import logger from "./config/logger.js";
+
 const app = express();
 //conect to mongo
 connectDB();
@@ -25,11 +27,12 @@ app.get("/test-data", async (req, res) => {
         const contact = await ContactModal.create(item);
         res.status(200).json(contact);
     } catch (error) {
-        res.status(500).json({ message: error })
+        logger.error(`Tạo contact thất bại: ${error}`);
+        res.status(500).json({ message: error });
     }
 });
 
 const port = config.server.port || 3000
 app.listen(port, () => {
-    console.log(`Server is running on port http://localhost:${port}`);
+    logger.info(`Server is running on port http://localhost:${port}`);
 });

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import bluebird from "bluebird";
+import logger from "./logger.js";
 import config from "./index.js";
 /**
  * connect db mongo
@@ -15,9 +15,9 @@ const connectDB = async () => {
             }
         }
         await mongoose.connect(url);
-        console.log("Connect to MongoDB successfully!");
+        logger.info("Connect to MongoDB successfully!");
     } catch (error) {
-        console.error("Connect to MongoDB failed:", error);
+        logger.error(`Connect to MongoDB failed: ${error}`);
     }
 }
 export default connectDB;
