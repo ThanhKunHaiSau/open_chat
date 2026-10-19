@@ -4,10 +4,12 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "tsx server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "call": "tsx test.ts",
+    "promise": "tsx promise.ts"
   },
   "repository": {
     "type": "git",
@@ -27,6 +29,7 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "mongoose": "^9.11.2"
   }
 }
