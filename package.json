@@ -24,16 +24,20 @@
   "description": "",
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
     "@types/node": "^26.6.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
   "dependencies": {
     "@types/bluebird": "^3.5.42",
+    "@types/cors": "^2.8.19",
     "bluebird": "^3.7.2",
+    "cors": "^2.8.6",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "mongoose": "^9.11.2",
+    "morgan": "^1.12.1",
     "uuid": "^14.0.3"
   }
 }

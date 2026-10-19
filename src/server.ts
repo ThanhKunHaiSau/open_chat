@@ -1,11 +1,20 @@
 import express from "express";
 import config from "./config/index.js";
+import morgan from "morgan";
+import cors from "cors";
 import connectDB from "./config/connectDB.js";
 import ContactModal from "./models/contact.model.js"
 import type { IContactCreate } from "./interface/index.js";
 const app = express();
 //conect to mongo
 connectDB();
+//body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+//cors
+app.use(cors());
+//logger 
+app.use(morgan("dev"))
 
 app.get("/test-data", async (req, res) => {
     try {
