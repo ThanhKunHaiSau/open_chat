@@ -1,0 +1,19 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+const config = {
+    mongodb: {
+        uri: process.env.MONGODB_URI,
+        connection: process.env.DB_CONNECTION,
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT,
+        name: process.env.DB_NAME,
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD
+    },
+    server: {
+        port: process.env.PORT
+    }
+}
+
+export default config;

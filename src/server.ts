@@ -1,12 +1,26 @@
 import express from "express";
-
+import config from "./config/index.js";
+import connectDB from "./config/connectDB.js";
+import ContactModal from "./models/contact.model.js"
+import type { IContactCreate } from "./interface/index.js";
 const app = express();
-const port = 3000;
+//conect to mongo
+connectDB();
 
-app.get("/", (req, res) => {
-    res.send("Hello World!1111");
+app.get("/test-data", async (req, res) => {
+    try {
+        const item: IContactCreate = {
+            userId: crypto.randomUUID(),
+            contactId: crypto.randomUUID()
+        }
+        const contact = await ContactModal.create(item);
+        res.status(200).json(contact);
+    } catch (error) {
+        res.status(500).json({ message: error })
+    }
 });
 
+const port = config.server.port || 3000
 app.listen(port, () => {
     console.log(`Server is running on port http://localhost:${port}`);
 });
