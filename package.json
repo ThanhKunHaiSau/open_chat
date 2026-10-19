@@ -1,0 +1,32 @@
+{
+  "name": "open_chat",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "tsx server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThanhKunHaiSau/open_chat.git"
+  },
+  "author": "The Anh",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ThanhKunHaiSau/open_chat/issues"
+  },
+  "homepage": "https://github.com/ThanhKunHaiSau/open_chat#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}
