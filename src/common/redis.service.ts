@@ -3,7 +3,7 @@ import redisClient from "../config/connectRedis.js";
 
 export const redisService = {
     // 1. Lưu Refresh Token (Mặc định 7 ngày = 604800 giây)
-    setRefreshToken: async (userId: string, token: string, ttlSeconds = 7 * 24 * 3600) => {
+    setRefreshToken: async (userId: string, token: string, ttlSeconds = 604800) => {
         const key = `refresh_token:${userId}`;
         return await redisClient.setex(key, ttlSeconds, token);
     },
@@ -37,5 +37,17 @@ export const redisService = {
     removeUserCache: async (userId: string) => {
         const key = `user:profile:${userId}`;
         return await redisClient.del(key);
-    }
+    },
+
+    // 7. Lưu key redis
+    setKeyCache: async (userId: string, user: any, key: string, ttlSeconds = 24 * 3600) => {
+        const keyR = `user:${userId}:${key}`;
+        return await redisClient.setex(keyR, ttlSeconds, JSON.stringify(user));
+    },
+
+    // 8. Lấy key redis
+    getKeyCache: async (userId: string, key: string) => {
+        const keyR = `user:${userId}:${key}`;
+        return await redisClient.get(keyR);
+    },
 };

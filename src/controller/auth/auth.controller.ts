@@ -8,29 +8,35 @@ import { redisService } from "../../common/redis.service.js";
 export const handleLogin = async (params: IAuthLogin) => {
     const { email, password } = params;
     const user = await User.findOne({ 'local.email': email }).select("+local.password").exec();
-    console.log("check user login", user);
     if (!user) {
         throw new AppError("Không tìm thấy user");
     }
     const isPasswordValid = await bcrypt.compare(password, user?.local?.password || "test");
-    const accessToken = signToken({ userId: user._id, role: user.role });
-    const refreshToken = signToken({ userId: user._id }, "7d");
-    console.log('check abd', refreshToken);
-    console.log("check accc", accessToken);
-    // Lưu vào Redis (cực nhanh < 1ms)
-    const userIdStr = user._id.toString();
-    await redisService.setRefreshToken(userIdStr, refreshToken);
-    await redisService.setUserCache(userIdStr, user);
-    return {
-        user,
-        accessToken,
-        refreshToken
-    };
-    console.log("check is password valid", isPasswordValid)
     if (!isPasswordValid) {
         throw new AppError("Sai mật khẩu");
     }
-    return user;
+    const accessToken = signToken({ userId: user._id, role: user.role });
+    const refreshToken = signToken({ userId: user._id }, "7d");
+
+    // Lưu vào Redis (cực nhanh < 1ms)
+    const userInfo = {
+        userId: user._id,
+        email: user?.local?.email,
+        username: user?.username,
+        gender: user?.gender,
+        role: user?.role,
+
+    }
+    const userIdStr = user._id.toString();
+    await redisService.setRefreshToken(userIdStr, refreshToken);
+    await redisService.setUserCache(userIdStr, userInfo);
+
+
+    return {
+        // user,
+        accessToken,
+        refreshToken
+    };
 }
 
 export const createUsers = async (params: IcreateUser) => {

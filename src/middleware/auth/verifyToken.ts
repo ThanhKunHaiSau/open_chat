@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyToken } from "../../common/auth.common.js";
 import User from "../../models/user.model.js";
-
+import { redisService } from "../../common/redis.service.js";
 // Mở rộng kiểu Request để TS nhận diện req.user
 declare global {
     namespace Express {
@@ -18,14 +18,15 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         if (!token) {
             return res.status(401).json({ message: "Bạn chưa đăng nhập!" });
         }
-
         // 1. Giải mã token lấy userId
         const decoded: any = verifyToken(token);
-
         // 2. Lấy user info (Ưu tiên lấy từ Redis, nếu chưa có thì tìm trong MongoDB)
-        const user = await User.findById(decoded.userId).select("-local.password");
+        let user = await redisService.getUserCache(decoded.userId);
         if (!user) {
-            return res.status(404).json({ message: "Người dùng không tồn tại!" });
+            user = await User.findById(decoded.userId);
+            if (!user)
+
+                return res.status(404).json({ message: "Người dùng không tồn tại!" });
         }
 
         // 3. GẮN VÀO REQ ĐỂ CÁC CONTROLLER PHÍA SAU XÀI:
