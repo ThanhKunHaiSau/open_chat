@@ -13,7 +13,15 @@ const config = {
     },
     server: {
         port: process.env.PORT
+    },
+    route: {
+        prefix: "/api/v1"
+    },
+    auth: {
+        secret: process.env.SECRET_KEY,
+        expiresIn: process.env.EXPIRES_IN
     }
+
 }
 
 export default config;

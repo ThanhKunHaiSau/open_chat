@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-enum genderEnum {
+export enum genderEnum {
     Male = "Male",
     Female = "Female"
 }
@@ -27,12 +27,13 @@ const userSchema = new Schema({
     facebook: {
         id: String,
         token: String,
-        email: { type: String, trim: true }
+        email: { type: String, trim: true },
+
     },
     google: {
         id: String,
         token: String,
-        email: { type: String, trim: true }
+        email: { type: String, trim: true },
     },
 
 })

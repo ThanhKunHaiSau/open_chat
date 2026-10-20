@@ -6,6 +6,9 @@ import connectDB from "./config/connectDB.js";
 import ContactModal from "./models/contact.model.js"
 import type { IContactCreate } from "./interface/index.js";
 import logger from "./config/logger.js";
+import initRouter from "./router/router.js";
+import { globalErrorHandler } from "./middleware/error.middleware.js";
+import responseMiddleware from "./middleware/response.middleware.js";
 
 const app = express();
 //conect to mongo
@@ -16,7 +19,13 @@ app.use(express.urlencoded({ extended: true }));
 //cors
 app.use(cors());
 //logger 
-app.use(morgan("dev"))
+app.use(morgan("dev"));
+//custom response
+app.use(responseMiddleware);
+// router
+initRouter(app);
+//error handle
+app.use(globalErrorHandler);
 
 app.get("/test-data", async (req, res) => {
     try {
