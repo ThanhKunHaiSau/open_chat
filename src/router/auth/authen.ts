@@ -8,9 +8,9 @@ export const router: Router = Router();
 
 router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { username, password } = req.body as IAuthLogin;
-        console.log("check login", username, password);
-        const user = await handleLogin({ username, password });
+        const { email, password } = req.body as IAuthLogin;
+        console.log("check login", email, password);
+        const user = await handleLogin({ email, password });
         return res.success(user, "Đăng nhập thành công");
     } catch (error) {
         next(error);
