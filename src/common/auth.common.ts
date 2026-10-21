@@ -1,16 +1,26 @@
-import jwt from "jsonwebtoken"
-import config from "../config/index.js"
-const secretkey = config.auth.secret || ""
-const expr = config.auth.expiresIn || "15m";
-export const signToken = (payload: any, p0?: string) => {
+import jwt from "jsonwebtoken";
+import config from "../config/index.js";
+import { AppError } from "./appError.js";
 
-    const token = jwt.sign(payload, secretkey, { expiresIn: expr as any });
+const secretkey = config.auth.secret || "";
+const defaultExpr = config.auth.expiresIn || "15m";
+
+export const signToken = (payload: any, expiresIn?: string) => {
+    const token = jwt.sign(payload, secretkey, {
+        expiresIn: (expiresIn || defaultExpr) as any
+    });
     if (!token) {
-        throw new Error("Tạo token thất bại");
+        throw new AppError("Tạo token thất bại", 500);
     }
     return token;
-}
+};
+
 
 export const verifyToken = (token: string) => {
-    return jwt.verify(token, secretkey);
-}
+    try {
+        const decode = jwt.verify(token, secretkey);
+        return decode;
+    } catch (error: any) {
+        throw new AppError("Token không hợp lệ hoặc đã hết hạn", 401);
+    }
+};
