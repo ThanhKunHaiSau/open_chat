@@ -4,11 +4,11 @@ import morgan from "morgan";
 import cors from "cors";
 import connectDB from "./config/connectDB.js";
 import ContactModal from "./models/contact.model.js"
-import type { IContactCreate } from "./interface/index.js";
 import logger from "./config/logger.js";
 import initRouter from "./router/router.js";
 import { globalErrorHandler } from "./middleware/error.middleware.js";
 import responseMiddleware from "./middleware/response.middleware.js";
+import type { IContactCreate } from "./interfaces/auth/contact/create.interface.js";
 
 const app = express();
 //conect to mongo

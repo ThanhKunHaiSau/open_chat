@@ -50,4 +50,9 @@ export const redisService = {
         const keyR = `user:${userId}:${key}`;
         return await redisClient.get(keyR);
     },
+
+    removeKeyCache: async (userId: string, key: string) => {
+        const keyR = `user:${userId}:${key}`;
+        return await redisClient.del(keyR);
+    }
 };

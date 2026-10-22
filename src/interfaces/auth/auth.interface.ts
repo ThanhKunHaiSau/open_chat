@@ -9,6 +9,7 @@ export interface IAuthRegister {
     password: string;
     email?: string;
     phoneNumber?: string;
+    gender: string;
 }
 
 export interface IcreateUser {

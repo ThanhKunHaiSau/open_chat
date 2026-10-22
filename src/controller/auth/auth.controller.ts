@@ -4,6 +4,7 @@ import User, { genderEnum } from "../../models/user.model.js";
 import { signToken, verifyToken } from "../../common/auth.common.js";
 import { AppError } from "../../common/appError.js";
 import { redisService } from "../../common/redis.service.js";
+import validate from 'deep-email-validator';
 
 export const handleLogin = async (params: IAuthLogin) => {
     const { email, password } = params;
@@ -90,33 +91,67 @@ export const handleRefreshToken = async (refreshToken: string) => {
 };
 
 export const createUsers = async (params: IcreateUser) => {
-    const hashPass = await bcrypt.hash(params.password, 12);
-    const payload = {
-        username: params.username,
-        email: params.email,
-        phone: params.phone,
-        gender: params.gender,
-        role: params.role,
-        address: params.address,
-        avatar: params.avatar
-    }
-    const signToke = signToken(payload)
+    try {
 
-    const user = {
-        username: params.username,
-        local: {
+        const isExist = await User.findOne({ 'local.email': params.email });
+        if (isExist) {
+            throw new AppError("Email đã tồn tại", 400);
+        }
+        const hashPass = await bcrypt.hash(params.password, 12);
+        const payload = {
+            username: params.username,
             email: params.email,
-            password: hashPass,
-            is_active: true,
-            verifyToken: signToke
-        },
-        gender: (params?.gender as genderEnum) || genderEnum.Male,
-        role: params?.role || "EU",
-        address: params?.address || "",
-        avatar: params?.avatar || ""
+            phone: params.phone,
+            gender: params.gender,
+            role: params.role,
+            address: params.address,
+            avatar: params.avatar
+        }
+        const signToke = signToken(payload)
+
+        const user = {
+            username: params.username,
+            local: {
+                email: params.email,
+                password: hashPass,
+                is_active: true,
+                verifyToken: signToke
+            },
+            gender: (params?.gender as genderEnum) || genderEnum.Male,
+            role: params?.role || "EU",
+            address: params?.address || "",
+            avatar: params?.avatar || ""
+        }
+        const createUser = await User.create({
+            ...user
+        })
+        return createUser;
+
+
+    } catch (error) {
+        throw new AppError("Tạo user thất bại", 400);
     }
-    const createUser = await User.create({
-        ...user
-    })
-    return user;
 }
+
+export const verifyEmail = async (email: string) => {
+    const res = await validate({
+        email: email.trim(),
+        validateRegex: true,
+        validateMx: true,          // Kiểm tra domain có nhận mail không
+        validateTypo: true,        // Bắt lỗi gõ sai tên miền phổ biến
+        validateDisposable: true,  // Chặn mail rác 10 phút
+        validateSMTP: false,       // ⚠️ Nên để false khi chạy ở localhost (xem lưu ý bên dưới)
+    });
+    if (!res.valid) {
+        throw new AppError(`Email không hợp lệ: ${res.reason}`, 400);
+    }
+    return true;
+};
+
+export const logout = async (token: string) => {
+    const decode = verifyToken(token);
+    const id = (decode as any)?.userId as string;
+    await redisService.removeUserCache(id);
+    await redisService.removeRefreshToken(id);
+    return true;
+};
