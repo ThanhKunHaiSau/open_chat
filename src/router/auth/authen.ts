@@ -1,10 +1,13 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
-import type { IAuthLogin, IAuthRegister, IcreateUser } from "../../interfaces/index.js";
-import { createUsers, getMe, handleLogin, handleRefreshToken, logout, verifyEmail, verifyTokenUser } from "../../controller/index.js";
+import type { IAuthLogin, IcreateUser } from "../../interfaces/index.js";
+import { createUsers, getMe, handleLogin, handleRefreshToken, logout, verifyEmail, verifyTokenUser, handleFacebookLogin, handleGoogleLogin, handleUpdateProfile } from "../../controller/index.js";
 import { AppError } from "../../common/appError.js";
 import { validateRequest } from "../../middleware/validate/validate.middleware.js";
 import { registerSchema, loginSchema } from "../../validate/index.js";
+import { authMiddleware } from "../../middleware/auth/verifyToken.js";
+import { uploadAvatarMiddleware } from "../../config/cloudinary.js";
+import { handleUpdateAvatar } from "../../controller/upload/upload.controller.js";
 
 
 export const router: Router = Router();
@@ -19,6 +22,33 @@ router.post("/login", validateRequest(loginSchema), async (req: Request, res: Re
         next(error);
     }
 });
+
+router.post("/facebook", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { accessToken } = req.body;
+        if (!accessToken) {
+            throw new AppError("Thiếu accessToken của Facebook", 400);
+        }
+        const result = await handleFacebookLogin(accessToken);
+        return res.success(result, "Đăng nhập Facebook thành công");
+    } catch (error) {
+        next(error);
+    }
+});
+
+router.post("/google", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { accessToken } = req.body;
+        if (!accessToken) {
+            throw new AppError("Thiếu accessToken của Google", 400);
+        }
+        const result = await handleGoogleLogin(accessToken);
+        return res.success(result, "Đăng nhập Google thành công");
+    } catch (error) {
+        next(error);
+    }
+});
+
 
 router.get("/me", async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -98,3 +128,34 @@ router.get("/verify-email/:token", async (req: Request, res: Response, next: Nex
         next(error);
     }
 })
+
+router.put("/avatar",
+    authMiddleware,
+    uploadAvatarMiddleware.single("file"),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            if (!req.file) {
+                throw new AppError("Không tìm thấy file", 400);
+            }
+            const userId = req.user.userId || req.user._id?.toString() || req.user.id;
+            const result = await handleUpdateAvatar(userId, req.file.buffer);
+            return res.success(result, "Avatar updated successfully");
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
+router.put("/profile",
+    authMiddleware,
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user.userId || req.user._id?.toString() || req.user.id;
+            const { username, gender, phone, address } = req.body;
+            const updatedUser = await handleUpdateProfile(userId, { username, gender, phone, address });
+            return res.success(updatedUser, "Cập nhật thông tin thành công");
+        } catch (error) {
+            next(error);
+        }
+    }
+);

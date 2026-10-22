@@ -25,16 +25,17 @@ export const handleLogin = async (params: IAuthLogin) => {
     // Lưu vào Redis (cực nhanh < 1ms)
     const userInfo = {
         userId: user._id,
-        email: user?.local?.email,
+        email: user?.local?.email || user?.google?.email || user?.facebook?.email,
         username: user?.username,
         gender: user?.gender,
         role: user?.role,
-
+        avatar: user?.avatar || "",
+        phone: user?.phone || null,
+        address: user?.address || "",
     }
     const userIdStr = user._id.toString();
     await redisService.setRefreshToken(userIdStr, refreshToken);
     await redisService.setUserCache(userIdStr, userInfo);
-
 
     return {
         user: userInfo,
@@ -58,14 +59,53 @@ export const getMe = async (token: string) => {
     }
     const userInfor = {
         userId: user._id,
-        email: user?.local?.email,
+        email: user?.local?.email || user?.google?.email || user?.facebook?.email,
         username: user?.username,
         gender: user?.gender,
         role: user?.role,
+        avatar: user?.avatar || "",
+        phone: user?.phone || null,
+        address: user?.address || "",
     }
     await redisService.setUserCache(id, userInfor);
     return userInfor;
 }
+
+export const handleUpdateProfile = async (
+    userId: string,
+    payload: { username?: string; gender?: genderEnum; phone?: number | string; address?: string }
+) => {
+    const updateData: any = {};
+    if (payload.username !== undefined) updateData.username = payload.username.trim();
+    if (payload.gender !== undefined) updateData.gender = payload.gender;
+    if (payload.phone !== undefined) {
+        const phoneNum = Number(payload.phone);
+        updateData.phone = isNaN(phoneNum) ? null : phoneNum;
+    }
+    if (payload.address !== undefined) updateData.address = payload.address.trim();
+
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+    if (!updatedUser) {
+        throw new AppError("Không tìm thấy người dùng", 404);
+    }
+
+    const userInfo = {
+        userId: updatedUser._id,
+        email: updatedUser?.local?.email || updatedUser?.google?.email || updatedUser?.facebook?.email,
+        username: updatedUser?.username,
+        gender: updatedUser?.gender,
+        role: updatedUser?.role,
+        avatar: updatedUser?.avatar || "",
+        phone: updatedUser?.phone || null,
+        address: updatedUser?.address || "",
+    };
+
+    // Cập nhật lại Cache trong Redis
+    const userIdStr = updatedUser._id.toString();
+    await redisService.setUserCache(userIdStr, userInfo);
+
+    return userInfo;
+};
 
 export const handleRefreshToken = async (refreshToken: string) => {
     if (!refreshToken) {
@@ -192,3 +232,155 @@ export const verifyTokenUser = async (token: string) => {
     }
     return userInfor;
 }
+
+export const handleFacebookLogin = async (fbAccessToken: string) => {
+    // 1. Gọi Graph API của Facebook để lấy thông tin người dùng từ token
+    const fbUrl = `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${fbAccessToken}`;
+    const fbResponse = await fetch(fbUrl);
+    const fbData = await fbResponse.json();
+
+    if (!fbData || fbData.error) {
+        throw new AppError(fbData?.error?.message || "Xác thực Facebook token thất bại", 400);
+    }
+
+    const { id, name, email, picture } = fbData;
+    const avatarUrl = picture?.data?.url || "";
+
+    // 2. Tìm xem user đã từng đăng nhập Facebook chưa
+    let user = await User.findOne({ 'facebook.id': id, deletedAt: null });
+
+    // Nếu chưa có facebook.id nhưng có email trùng với tài khoản Local -> liên kết tài khoản
+    if (!user && email) {
+        user = await User.findOne({ 'local.email': email, deletedAt: null });
+        if (user) {
+            user.facebook = { id, token: fbAccessToken, email };
+            if (!user.avatar) user.avatar = avatarUrl;
+            await user.save();
+        }
+    }
+
+    // Nếu chưa từng có tài khoản -> Tạo mới User
+    if (!user) {
+        user = await User.create({
+            username: name,
+            avatar: avatarUrl,
+            role: "EU",
+            facebook: {
+                id,
+                token: fbAccessToken,
+                email: email || undefined,
+            },
+            local: {
+                email: email || undefined,
+                is_active: true // Đăng nhập MXH thì tự động active luôn
+            }
+        });
+    }
+
+    // 3. Tạo AccessToken và RefreshToken của hệ thống OpenChat
+    const accessToken = signToken({ userId: user._id, role: user.role });
+    const refreshToken = signToken({ userId: user._id }, "7d");
+
+    const userInfo = {
+        userId: user._id,
+        email: user?.local?.email || user?.facebook?.email,
+        username: user?.username,
+        gender: user?.gender,
+        role: user?.role,
+        avatar: user?.avatar || "",
+        phone: user?.phone || null,
+        address: user?.address || "",
+    };
+
+    // 4. Lưu Cache vào Redis
+    const userIdStr = user._id.toString();
+    await redisService.setRefreshToken(userIdStr, refreshToken);
+    await redisService.setUserCache(userIdStr, userInfo);
+
+    return {
+        user: userInfo,
+        accessToken,
+        refreshToken
+    };
+};
+
+export const handleGoogleLogin = async (googleAccessToken: string) => {
+    // 1. Gọi Google UserInfo API để lấy thông tin từ access token
+    const googleUrl = "https://www.googleapis.com/oauth2/v3/userinfo";
+    const googleResponse = await fetch(googleUrl, {
+        headers: {
+            Authorization: `Bearer ${googleAccessToken}`
+        }
+    });
+    const googleData = await googleResponse.json();
+
+    if (!googleData || googleData.error || !googleData.sub) {
+        throw new AppError(googleData?.error_description || googleData?.error || "Xác thực Google token thất bại", 400);
+    }
+
+    const { sub: id, name, email, picture } = googleData;
+    const avatarUrl = picture || "";
+
+    // 2. Tìm xem user đã từng đăng nhập Google chưa
+    let user = await User.findOne({ 'google.id': id, deletedAt: null });
+
+    // Nếu chưa có google.id nhưng có email trùng với tài khoản Local / Facebook -> liên kết tài khoản
+    if (!user && email) {
+        user = await User.findOne({
+            $or: [
+                { 'local.email': email },
+                { 'facebook.email': email }
+            ],
+            deletedAt: null
+        });
+        if (user) {
+            user.google = { id, token: googleAccessToken, email };
+            if (!user.avatar) user.avatar = avatarUrl;
+            await user.save();
+        }
+    }
+
+    // Nếu chưa từng có tài khoản -> Tạo mới User
+    if (!user) {
+        user = await User.create({
+            username: name,
+            avatar: avatarUrl,
+            role: "EU",
+            google: {
+                id,
+                token: googleAccessToken,
+                email: email || undefined,
+            },
+            local: {
+                email: email || undefined,
+                is_active: true // Đăng nhập Google thì tự động active luôn
+            }
+        });
+    }
+
+    // 3. Tạo AccessToken và RefreshToken của hệ thống OpenChat
+    const accessToken = signToken({ userId: user._id, role: user.role });
+    const refreshToken = signToken({ userId: user._id }, "7d");
+
+    const userInfo = {
+        userId: user._id,
+        email: user?.local?.email || user?.google?.email || user?.facebook?.email,
+        username: user?.username,
+        gender: user?.gender,
+        role: user?.role,
+        avatar: user?.avatar || "",
+        phone: user?.phone || null,
+        address: user?.address || "",
+    };
+
+    // 4. Lưu Cache vào Redis
+    const userIdStr = user._id.toString();
+    await redisService.setRefreshToken(userIdStr, refreshToken);
+    await redisService.setUserCache(userIdStr, userInfo);
+
+    return {
+        user: userInfo,
+        accessToken,
+        refreshToken
+    };
+};

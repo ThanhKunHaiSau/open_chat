@@ -28,9 +28,10 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 
                 return res.status(404).json({ message: "Người dùng không tồn tại!" });
         }
-
+        await redisService.setUserCache(decoded.userId, user);
         // 3. GẮN VÀO REQ ĐỂ CÁC CONTROLLER PHÍA SAU XÀI:
         req.user = user;
+
         next();
     } catch (error) {
         return res.status(401).json({ message: "Token không hợp lệ hoặc đã hết hạn!" });

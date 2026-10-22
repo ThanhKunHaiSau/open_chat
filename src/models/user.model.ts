@@ -28,6 +28,7 @@ const userSchema = new Schema({
         id: String,
         token: String,
         email: { type: String, trim: true },
+        phone: { type: Number, default: null },
 
     },
     google: {
