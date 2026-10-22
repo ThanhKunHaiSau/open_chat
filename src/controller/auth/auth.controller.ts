@@ -5,6 +5,9 @@ import { signToken, verifyToken } from "../../common/auth.common.js";
 import { AppError } from "../../common/appError.js";
 import { redisService } from "../../common/redis.service.js";
 import validate from 'deep-email-validator';
+import { v4 as uuidv4 } from 'uuid';
+import { sendMail, sendVerificationEmail } from "../../config/mailer.js";
+import mongoose from "mongoose";
 
 export const handleLogin = async (params: IAuthLogin) => {
     const { email, password } = params;
@@ -91,45 +94,59 @@ export const handleRefreshToken = async (refreshToken: string) => {
 };
 
 export const createUsers = async (params: IcreateUser) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
 
-        const isExist = await User.findOne({ 'local.email': params.email });
-        if (isExist) {
+        const isExist = await User.findOne({ 'local.email': params.email, deletedAt: null });
+        if (isExist && isExist?.local?.is_active) {
+
             throw new AppError("Email đã tồn tại", 400);
+        } else if (isExist && !isExist?.local?.is_active) {
+            throw new AppError("Tài khoản đã được tạo nhưng chưa được active, vui lòng kiểm tra email để active tài khoản", 400);
         }
         const hashPass = await bcrypt.hash(params.password, 12);
-        const payload = {
-            username: params.username,
-            email: params.email,
-            phone: params.phone,
-            gender: params.gender,
-            role: params.role,
-            address: params.address,
-            avatar: params.avatar
-        }
-        const signToke = signToken(payload)
-
+        const verifyToken = uuidv4();
         const user = {
             username: params.username,
             local: {
                 email: params.email,
                 password: hashPass,
-                is_active: true,
-                verifyToken: signToke
+                is_active: false,
+                verifyToken
             },
             gender: (params?.gender as genderEnum) || genderEnum.Male,
             role: params?.role || "EU",
             address: params?.address || "",
             avatar: params?.avatar || ""
-        }
+        };
         const createUser = await User.create({
             ...user
-        })
+        });
+
+        try {
+            await sendVerificationEmail({
+                to: params.email,
+                username: params.username,
+                verifyToken
+            })
+        } catch (emailError) {
+            console.error("Lỗi gửi email:", emailError);
+            throw new AppError("Gửi email xác thực thất bại. Vui lòng thử lại sau!", 503);
+        }
+
+
+        await session.commitTransaction();
         return createUser;
 
-
     } catch (error) {
+        await session.abortTransaction();
+        if (error instanceof AppError) throw error;
         throw new AppError("Tạo user thất bại", 400);
+    } finally {
+        // 6. Luôn đóng session sau khi xong
+        session.endSession();
     }
 }
 
@@ -155,3 +172,23 @@ export const logout = async (token: string) => {
     await redisService.removeRefreshToken(id);
     return true;
 };
+
+export const verifyTokenUser = async (token: string) => {
+    const tokenUser = token.trim();
+    const user = await User.findOneAndUpdate({ 'local.verifyToken': tokenUser },
+        {
+            "local.verifyToken": null,
+            "local.is_active": true
+        }, { new: true });
+    if (!user) {
+        throw new AppError("Không tìm thấy thông tin người dùng hoặc tài khoản đã được kích hoạt trước đó", 404);
+    }
+    const userInfor = {
+        userId: user._id,
+        email: user?.local?.email,
+        username: user?.username,
+        gender: user?.gender,
+        role: user?.role,
+    }
+    return userInfor;
+}

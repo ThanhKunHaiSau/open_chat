@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
 import type { IAuthLogin, IAuthRegister, IcreateUser } from "../../interfaces/index.js";
-import { createUsers, getMe, handleLogin, handleRefreshToken, logout, verifyEmail } from "../../controller/index.js";
+import { createUsers, getMe, handleLogin, handleRefreshToken, logout, verifyEmail, verifyTokenUser } from "../../controller/index.js";
 import { AppError } from "../../common/appError.js";
 import { validateRequest } from "../../middleware/validate/validate.middleware.js";
 import { registerSchema, loginSchema } from "../../validate/index.js";
@@ -83,6 +83,16 @@ router.post("/verify-email", async (req: Request, res: Response, next: NextFunct
     try {
         const token = req.body.email;
         const user = await verifyEmail(token);
+        return res.success(user, "Email verified successfully");
+    } catch (error) {
+        next(error);
+    }
+})
+
+router.get("/verify-email/:token", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const token = req.params.token as string;
+        const user = await verifyTokenUser(token);
         return res.success(user, "Email verified successfully");
     } catch (error) {
         next(error);

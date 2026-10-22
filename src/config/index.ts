@@ -26,6 +26,15 @@ const config = {
         port: Number(process.env.REDIS_PORT) || 6379,
         password: process.env.REDIS_PASSWORD || undefined,
     },
+    mail: {
+        host: process.env.MAIL_HOST,
+        port: Number(process.env.MAIL_PORT) || 587,
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS || process.env.MAILL_PASS,
+    },
+    client: {
+        url: process.env.CLIENT_URL || "http://localhost:5173",
+    }
 
 
 }
