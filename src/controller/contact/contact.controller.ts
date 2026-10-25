@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { convertObjectId, extractOtherUserObjectIds } from "../common/common.controller.js";
 import Contact from "../../models/contact.model.js";
+import { redisService } from "../../common/redis.service.js";
 
 export const getAllContact = async (userId: string, query?: any) => {
     try {
@@ -35,6 +36,12 @@ export const addFriend = async (userId: string, contactId: string) => {
             userId,
             contactId
         });
+        // Xóa cache danh sách tìm kiếm của cả 2 user
+        await Promise.all([
+            redisService.clearUserSearchCache(userId),
+            redisService.clearUserSearchCache(contactId)
+        ]).catch(() => {});
+
         return contact;
     } catch (error: any) {
         throw new Error(
@@ -71,6 +78,12 @@ export const updateStatus = async (userId: string, contactId: string, status: bo
         if (!contact) {
             throw new Error("Update thất bại!");
         }
+        // Xóa cache danh sách tìm kiếm của cả 2 user
+        await Promise.all([
+            redisService.clearUserSearchCache(userId),
+            redisService.clearUserSearchCache(contactId)
+        ]).catch(() => {});
+
         return contact;
     } catch (error: any) {
         throw new Error(
@@ -86,7 +99,6 @@ export const findAddedFriend = async (userId: string) => {
                 { userId: userId },
                 { contactId: userId }
             ],
-            status: true,
             deletedAt: null
         }).select("userId contactId status");
         return extractOtherUserObjectIds(contacts, userId, true);

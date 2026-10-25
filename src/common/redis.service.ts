@@ -54,5 +54,17 @@ export const redisService = {
     removeKeyCache: async (userId: string, key: string) => {
         const keyR = `user:${userId}:${key}`;
         return await redisClient.del(keyR);
+    },
+
+    // 9. Xóa toàn bộ cache search allUser của user
+    clearUserSearchCache: async (userId: string) => {
+        try {
+            const keys = await redisClient.keys(`user:${userId}:*allUser*`);
+            if (keys && keys.length > 0) {
+                await redisClient.del(...keys);
+            }
+        } catch (e) {
+            // ignore error
+        }
     }
 };
