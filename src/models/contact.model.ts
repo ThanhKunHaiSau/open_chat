@@ -13,5 +13,6 @@ contactSchema.statics = {
         return this.create(item)
     }
 }
+contactSchema.index({ userId: 1, contactId: 1 });
 const Contact = mongoose.model('Contact', contactSchema);
 export default Contact;

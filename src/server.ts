@@ -8,7 +8,7 @@ import logger from "./config/logger.js";
 import initRouter from "./router/router.js";
 import { globalErrorHandler } from "./middleware/error.middleware.js";
 import responseMiddleware from "./middleware/response.middleware.js";
-import type { IContactCreate } from "./interfaces/auth/contact/create.interface.js";
+import type { IContactCreate } from "./interfaces/contact/create.interface.js";
 
 const app = express();
 //conect to mongo

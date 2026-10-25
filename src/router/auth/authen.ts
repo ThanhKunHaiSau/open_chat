@@ -15,13 +15,14 @@ export const router: Router = Router();
 router.post("/login", validateRequest(loginSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { email, password } = req.body as IAuthLogin;
-        console.log("check login", email, password);
         const user = await handleLogin({ email, password });
         return res.success(user, "Đăng nhập thành công");
     } catch (error) {
         next(error);
     }
 });
+
+
 
 router.post("/facebook", async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -101,7 +102,6 @@ router.post("/create-user", async (req: Request, res: Response, next: NextFuncti
 router.post("/register", validateRequest(registerSchema), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const params = req.body as IcreateUser;
-        console.log("check register", params);
         const user = await createUsers(params);
         return res.success(user, "Đăng ký thành công");
     } catch (error) {
@@ -159,3 +159,4 @@ router.put("/profile",
         }
     }
 );
+

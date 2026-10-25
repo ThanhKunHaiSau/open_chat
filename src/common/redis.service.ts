@@ -40,9 +40,9 @@ export const redisService = {
     },
 
     // 7. Lưu key redis
-    setKeyCache: async (userId: string, user: any, key: string, ttlSeconds = 24 * 3600) => {
+    setKeyCache: async (userId: string, key: string, value: any, ttlSeconds = 24 * 3600) => {
         const keyR = `user:${userId}:${key}`;
-        return await redisClient.setex(keyR, ttlSeconds, JSON.stringify(user));
+        return await redisClient.setex(keyR, ttlSeconds, JSON.stringify(value));
     },
 
     // 8. Lấy key redis
