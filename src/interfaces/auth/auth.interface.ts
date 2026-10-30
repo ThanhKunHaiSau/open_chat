@@ -22,3 +22,14 @@ export interface IcreateUser {
     address?: string;
     avatar?: string;
 }
+
+export interface IUser {
+    userId: string,
+    email: string,
+    username: string,
+    gender: string,
+    role: string,
+    avatar?: string,
+    phone?: string,
+    address?: string
+}

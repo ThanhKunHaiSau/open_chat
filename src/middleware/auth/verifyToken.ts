@@ -13,14 +13,13 @@ declare global {
 export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
-        const token = authHeader && authHeader.split(" ")[1]; // Lấy token sau chữ "Bearer"
+        const token = authHeader && authHeader.split(" ")[1];
 
         if (!token) {
             return res.status(401).json({ message: "Bạn chưa đăng nhập!" });
         }
-        // 1. Giải mã token lấy userId
         const decoded: any = verifyToken(token);
-        // 2. Lấy user info (Ưu tiên lấy từ Redis, nếu chưa có thì tìm trong MongoDB)
+
         let user = await redisService.getUserCache(decoded.userId);
         if (!user) {
             user = await User.findById(decoded.userId);
@@ -29,7 +28,6 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
                 return res.status(404).json({ message: "Người dùng không tồn tại!" });
         }
         await redisService.setUserCache(decoded.userId, user);
-        // 3. GẮN VÀO REQ ĐỂ CÁC CONTROLLER PHÍA SAU XÀI:
         req.user = user;
 
         next();

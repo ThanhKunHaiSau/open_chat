@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import config from "../config/index.js";
 import { AppError } from "./appError.js";
+import type { IUser } from "../interfaces/index.js";
 
 const secretkey = config.auth.secret || "";
 const defaultExpr = config.auth.expiresIn || "15m";

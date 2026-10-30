@@ -19,10 +19,7 @@ export const handleLogin = async (params: IAuthLogin) => {
     if (!isPasswordValid) {
         throw new AppError("Sai mật khẩu");
     }
-    const accessToken = signToken({ userId: user._id, role: user.role });
-    const refreshToken = signToken({ userId: user._id }, "7d");
 
-    // Lưu vào Redis (cực nhanh < 1ms)
     const userInfo = {
         userId: user._id,
         email: user?.local?.email || user?.google?.email || user?.facebook?.email,
@@ -33,6 +30,10 @@ export const handleLogin = async (params: IAuthLogin) => {
         phone: user?.phone || null,
         address: user?.address || "",
     }
+    const accessToken = signToken(userInfo);
+    const refreshToken = signToken(userInfo, "7d");
+
+
     const userIdStr = user._id.toString();
     await redisService.setRefreshToken(userIdStr, refreshToken);
     await redisService.setUserCache(userIdStr, userInfo);

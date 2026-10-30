@@ -8,9 +8,26 @@ import logger from "./config/logger.js";
 import initRouter from "./router/router.js";
 import { globalErrorHandler } from "./middleware/error.middleware.js";
 import responseMiddleware from "./middleware/response.middleware.js";
-import type { IContactCreate } from "./interfaces/contact/create.interface.js";
-
+import http from "http"
+import { Server } from "socket.io";
+import { initSockets } from "./sockets/index.js";
 const app = express();
+
+//init server with socketio express
+
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+        methods: ["GET", "POST", "PUT"],
+        credentials: true
+    }
+});
+
+
+// Lắng nghe sự kiện kết nối của socket
+
+
 //conect to mongo
 connectDB();
 //body parser
@@ -24,24 +41,12 @@ app.use(morgan("dev"));
 app.use(responseMiddleware);
 // router
 initRouter(app);
+//init sockets
+initSockets(io)
 //error handle
 app.use(globalErrorHandler);
 
-app.get("/test-data", async (req, res) => {
-    try {
-        const item: IContactCreate = {
-            userId: crypto.randomUUID(),
-            contactId: crypto.randomUUID()
-        }
-        const contact = await ContactModal.create(item);
-        res.status(200).json(contact);
-    } catch (error) {
-        logger.error(`Tạo contact thất bại: ${error}`);
-        res.status(500).json({ message: error });
-    }
-});
-
 const port = config.server.port || 3000
-app.listen(port, () => {
+server.listen(port, () => {
     logger.info(`Server is running on port http://localhost:${port}`);
 });
