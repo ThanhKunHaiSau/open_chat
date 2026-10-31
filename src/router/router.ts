@@ -5,11 +5,13 @@ import { router as authRouter } from "./auth/authen.js";
 import { router as contactRouter } from "./contact/contact.js";
 import { authMiddleware } from "../middleware/auth/verifyToken.js";
 import { router as userRouter } from "./auth/user.route.js";
+import { router as notificationRouter } from "./notification/notification.route.js";
 
 export const initRouter = (app: Application) => {
     app.use(`${config.route.prefix}/auth`, authRouter);
     app.use(`${config.route.prefix}/contacts`, authMiddleware, contactRouter);
     app.use(`${config.route.prefix}/users`, authMiddleware, userRouter);
+    app.use(`${config.route.prefix}/notifications`, authMiddleware, notificationRouter);
 };
 
 export default initRouter;

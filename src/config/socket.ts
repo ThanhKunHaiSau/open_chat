@@ -26,8 +26,11 @@ export const setUserValueSocket = (io: Server) => {
 
     io.on("connection", (socket) => {
         const user = socket.data.user;
-        logger.info(`User ${user?.userId} (${socket.id}) đã kết nối thành công!`);
-
+        const userId = user?.userId?.toString();
+        if (userId) {
+            socket.join(userId);
+        }
+        logger.info(`User ${userId} (${socket.id}) đã kết nối thành công!`);
         socket.on("disconnect", () => {
             logger.info(`User ${socket.id} đã ngắt kết nối.`);
         });
