@@ -1,22 +1,74 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { baseSchema } from "./base.model.js";
 
-const Schema = mongoose.Schema;
 const messageSchema = new Schema({
-    id: String,
-    sender: {
-        id: String,
-        username: String,
-        avatar: String
+    conversationId: {
+        type: Schema.Types.ObjectId,
+        ref: "Conversation",
+        required: true,
+        index: true,
     },
-    receiver: {
-        id: String,
-        username: String,
-        avatar: String
+    senderId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
     },
-    text: String,
-    file: { data: Buffer, contentType: String, fileName: String },
-})
-messageSchema.add(baseSchema)
-const Message = mongoose.model('Message', messageSchema);
+    receiverId: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+    },
+    content: {
+        type: String,
+        default: "",
+        trim: true,
+    },
+    type: {
+        type: String,
+        enum: ["text", "image", "file"],
+        default: "text",
+    },
+    file: {
+        url: { type: String, default: null },
+        fileName: { type: String, default: null },
+        fileSize: { type: Number, default: 0 },
+        contentType: { type: String, default: null },
+    },
+    status: {
+        type: String,
+        enum: ["sent", "delivered", "read"],
+        default: "sent",
+    },
+    readBy: [
+        {
+            userId: {
+                type: Schema.Types.ObjectId,
+                ref: "User",
+            },
+            readAt: {
+                type: Date,
+                default: Date.now,
+            },
+        },
+    ],
+    replyTo: {
+        type: Schema.Types.ObjectId,
+        ref: "Message",
+        default: null,
+    },
+    deletedFor: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
+    ],
+});
+
+messageSchema.add(baseSchema);
+
+// Đánh Index kép để query 20 tin nhắn mới nhất siêu nhanh
+messageSchema.index({ conversationId: 1, createdAt: -1 });
+
+const Message = mongoose.model("Message", messageSchema);
+
 export default Message;

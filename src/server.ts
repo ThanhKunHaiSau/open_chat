@@ -23,6 +23,7 @@ const io = new Server(server, {
         credentials: true
     }
 });
+app.set("io", io);
 
 
 // Lắng nghe sự kiện kết nối của socket

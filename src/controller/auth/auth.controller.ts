@@ -85,7 +85,7 @@ export const handleUpdateProfile = async (
     }
     if (payload.address !== undefined) updateData.address = payload.address.trim();
 
-    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(userId, { $set: updateData }, { returnDocument: 'after' });
     if (!updatedUser) {
         throw new AppError("Không tìm thấy người dùng", 404);
     }
@@ -220,7 +220,7 @@ export const verifyTokenUser = async (token: string) => {
         {
             "local.verifyToken": null,
             "local.is_active": true
-        }, { new: true });
+        }, { returnDocument: 'after' });
     if (!user) {
         throw new AppError("Không tìm thấy thông tin người dùng hoặc tài khoản đã được kích hoạt trước đó", 404);
     }
