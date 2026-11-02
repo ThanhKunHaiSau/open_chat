@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { AppError } from '../../common/appError.js';
-import { addFriend, getAllContact, getRequestFriend, updateStatus } from '../../controller/contact/contact.controller.js';
+import { addFriend, getAllFriendContact, getRequestFriend, updateStatus } from '../../controller/contact/contact.controller.js';
 
 export const router = Router();
 
@@ -10,8 +10,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
         return []
     }
     const query = req?.query?.name || undefined;
-    const contacts = await getAllContact(userId, query);
-    return res.status(200).json("heloo")
+    const contacts = await getAllFriendContact(userId);
+    return res.success(contacts)
 
 });
 

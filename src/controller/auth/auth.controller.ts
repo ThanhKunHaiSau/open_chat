@@ -277,9 +277,15 @@ export const handleFacebookLogin = async (fbAccessToken: string) => {
             }
         });
     }
+    const userPayload = {
+        userId: user._id,
+        username: user.username,
+        avatar: user.avatar,
+        role: user.role,
+    }
 
     // 3. Tạo AccessToken và RefreshToken của hệ thống OpenChat
-    const accessToken = signToken({ userId: user._id, role: user.role });
+    const accessToken = signToken(userPayload);
     const refreshToken = signToken({ userId: user._id }, "7d");
 
     const userInfo = {
@@ -359,8 +365,15 @@ export const handleGoogleLogin = async (googleAccessToken: string) => {
         });
     }
 
+    const userPayload = {
+        userId: user._id,
+        username: user.username,
+        avatar: user.avatar,
+        role: user.role,
+    }
+
+    const accessToken = signToken({ userPayload });
     // 3. Tạo AccessToken và RefreshToken của hệ thống OpenChat
-    const accessToken = signToken({ userId: user._id, role: user.role });
     const refreshToken = signToken({ userId: user._id }, "7d");
 
     const userInfo = {

@@ -74,7 +74,6 @@ export const addContact = (io: Server, socket: Socket) => {
         };
         const receiverId = data.contactId;
 
-        // Lưu thông báo "chấp nhận kết bạn" vào MongoDB
         let savedNotif: any = null;
         try {
             savedNotif = await createNoitication({

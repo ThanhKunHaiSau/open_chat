@@ -1,25 +1,24 @@
 import mongoose from "mongoose";
-import { convertObjectId, extractOtherUserObjectIds } from "../common/common.controller.js";
+import { convertObjectId, extractOtherUserObjectIds, getOtherUserId } from "../common/common.controller.js";
 import Contact from "../../models/contact.model.js";
 import { redisService } from "../../common/redis.service.js";
 
-export const getAllContact = async (userId: string, query?: any) => {
+export const getAllFriendContact = async (userId: string) => {
     try {
-        const filter = {
-            _id: { $ne: userId }
-        }
-        // if (query) {
-        //     filter.name
-        // }
-
-        return;
+        const friends = await Contact.find({
+            $or: [
+                { userId: userId },
+                { contactId: userId }
+            ],
+            status: true,
+            deletedAt: null
+        }).select("userId contactId");
+        const friendIds = friends.map((friend) => getOtherUserId(friend, userId));
+        return friendIds;
     } catch (error: any) {
-        throw new Error(
-            error
-        )
+        throw new Error(error.message || error);
     }
-}
-
+};
 export const addFriend = async (userId: string, contactId: string) => {
     try {
         const existingContact = await Contact.findOne({
@@ -40,7 +39,7 @@ export const addFriend = async (userId: string, contactId: string) => {
         await Promise.all([
             redisService.clearUserSearchCache(userId),
             redisService.clearUserSearchCache(contactId)
-        ]).catch(() => {});
+        ]).catch(() => { });
 
         return contact;
     } catch (error: any) {
@@ -82,7 +81,7 @@ export const updateStatus = async (userId: string, contactId: string, status: bo
         await Promise.all([
             redisService.clearUserSearchCache(userId),
             redisService.clearUserSearchCache(contactId)
-        ]).catch(() => {});
+        ]).catch(() => { });
 
         return contact;
     } catch (error: any) {
