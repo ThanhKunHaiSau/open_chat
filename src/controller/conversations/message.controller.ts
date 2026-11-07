@@ -29,6 +29,7 @@ export const getConversationMessages = async (
             .skip(skip)
             .limit(limit)
             .populate("senderId", "username avatar")
+            .populate("readBy.userId", "username avatar")
             .populate("replyTo");
 
         const total = await Message.countDocuments({
@@ -132,6 +133,7 @@ export const handleUploadImage = async (
         // 5. Populate thông tin người gửi
         const populatedMsg = await Message.findById(newMsg._id)
             .populate("senderId", "username avatar")
+            .populate("readBy.userId", "username avatar")
             .populate("replyTo");
 
         // 6. Cập nhật lastMessage & unreadCounts trong Conversation
@@ -185,3 +187,4 @@ export const handleUploadImage = async (
         throw new AppError(error.message || "Upload ảnh thất bại", error.statusCode || 500);
     }
 };
+

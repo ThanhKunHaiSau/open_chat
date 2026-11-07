@@ -23,6 +23,20 @@ const conversationSchema = new Schema({
         enum: ["direct", "group"],
         default: "direct",
     },
+    theme: {
+        type: String,
+        default: null,
+    },
+    background: {
+        url: {
+            type: String,
+            default: null,
+        },
+        gradient: {
+            type: String,
+            default: null,
+        }
+    },
     participants: [
         {
             type: Schema.Types.ObjectId,
@@ -50,7 +64,7 @@ const conversationSchema = new Schema({
         },
         type: {
             type: String,
-            enum: ["text", "image", "file"],
+            enum: ["text", "image", "file", "sticker"],
             default: "text",
         },
         createdAt: {

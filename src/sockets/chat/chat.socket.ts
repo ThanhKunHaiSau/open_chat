@@ -1,6 +1,7 @@
 import type { Server, Socket } from "socket.io";
 import Message from "../../models/message.model.js";
 import Conversation from "../../models/conversation.model.js";
+import User from "../../models/user.model.js";
 
 /**
  * Xử lý toàn bộ sự kiện Socket Real-time cho tính năng Chat
@@ -32,7 +33,7 @@ export const chatSocket = (io: Server, socket: Socket) => {
     socket.on("send_message", async (data: {
         conversationId: string;
         content?: string;
-        type?: "text" | "image" | "file";
+        type?: "text" | "image" | "file" | "sticker";
         file?: {
             url: string;
             fileName?: string;
@@ -79,6 +80,7 @@ export const chatSocket = (io: Server, socket: Socket) => {
             let lastMessagePreview = content?.trim() || "";
             if (type === "image") lastMessagePreview = "[Hình ảnh]";
             if (type === "file") lastMessagePreview = `[Tệp] ${file?.fileName || "tập tin"}`;
+            if (type === "sticker") lastMessagePreview = "[Nhãn dán]";
 
             const currentConv = await Conversation.findById(conversationId);
             const incFields: Record<string, number> = {};
@@ -165,34 +167,56 @@ export const chatSocket = (io: Server, socket: Socket) => {
             const conversationId = data?.conversationId;
             if (!conversationId || !currentUserId) return;
 
-            // Đặt số tin chưa đọc của user này về 0
+            // 6.1. Đặt số tin chưa đọc của user này về 0
             await Conversation.findByIdAndUpdate(conversationId, {
                 $set: { [`unreadCounts.${currentUserId}`]: 0 },
             });
 
-            // Cập nhật trạng thái tin nhắn thành "read"
+            // 6.2. Lấy thông tin người đọc (avatar & username)
+            let username = socket.data.user?.username;
+            let avatar = socket.data.user?.avatar;
+            if (!avatar || !username) {
+                const u = await User.findById(currentUserId).select("username avatar");
+                if (u) {
+                    username = u.username;
+                    avatar = u.avatar;
+                }
+            }
+
+            const readAt = new Date();
+
+            // 6.3. Cập nhật trạng thái tin nhắn thành "read" và thêm user vào readBy nếu chưa có
+            // Điều kiện "readBy.userId": { $ne: currentUserId } đảm bảo hỗ trợ đầy đủ cho cả nhóm (Group)
+            // khi nhiều người cùng đọc một tin nhắn mà không bị ghi đè hay bỏ sót.
             await Message.updateMany(
                 {
                     conversationId,
                     senderId: { $ne: currentUserId },
-                    status: { $ne: "read" },
+                    "readBy.userId": { $ne: currentUserId },
                 },
                 {
                     $set: { status: "read" },
-                    $addToSet: {
+                    $push: {
                         readBy: {
                             userId: currentUserId,
-                            readAt: new Date(),
+                            readAt,
                         },
                     },
                 }
             );
 
-            // Báo cho đối phương biết tin nhắn đã được đọc (đổi 2 dấu tick xanh)
+            const reader = {
+                _id: currentUserId,
+                username: username || "Thành viên",
+                avatar: avatar || null,
+            };
+
+            // 6.4. Báo cho toàn bộ thành viên trong phòng biết user này đã đọc tin nhắn
             io.to(conversationId.toString()).emit("messages_read", {
                 conversationId,
                 userId: currentUserId,
-                readAt: new Date(),
+                reader,
+                readAt,
             });
         } catch (error: any) {
             console.error("❌ [Socket Chat] Lỗi xử lý mark_read:", error);
