@@ -66,5 +66,17 @@ export const redisService = {
         } catch (e) {
             // ignore error
         }
+    },
+
+    // 10. Xóa toàn bộ cache media/file của một cuộc hội thoại
+    clearConversationMediaCache: async (conversationId: string) => {
+        try {
+            const keys = await redisClient.keys(`*media-file:${conversationId}:*`);
+            if (keys && keys.length > 0) {
+                await redisClient.del(...keys);
+            }
+        } catch (e) {
+            // ignore error
+        }
     }
 };

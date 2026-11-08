@@ -283,7 +283,6 @@ export const handleFacebookLogin = async (fbAccessToken: string) => {
         avatar: user.avatar,
         role: user.role,
     }
-
     // 3. Tạo AccessToken và RefreshToken của hệ thống OpenChat
     const accessToken = signToken(userPayload);
     const refreshToken = signToken({ userId: user._id }, "7d");

@@ -1,6 +1,8 @@
 import type { Server, Socket } from "socket.io";
-import Conversation from "../../models/conversation.model.js";
-import { createNoitication } from "../../controller/noitication/noitication.controller.js";
+import {
+    createNoitication,
+    getConversationById,
+} from "../../controller/index.js";
 
 export const groupContact = (io: Server, socket: Socket) => {
     socket.on("add_group", async (data: any) => {
@@ -18,9 +20,7 @@ export const groupContact = (io: Server, socket: Socket) => {
                 username: socket.data.user?.username,
             };
 
-            const conversation = await Conversation.findById(conversationId)
-                .populate("participants", "username avatar gender phone address")
-                .populate("lastMessage.senderId", "username avatar");
+            const conversation = await getConversationById(conversationId);
 
             if (!conversation) return;
 

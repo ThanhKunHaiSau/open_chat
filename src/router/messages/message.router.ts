@@ -2,7 +2,8 @@ import { Router, type NextFunction, type Request, type Response } from "express"
 import { handleUploadImage, handleUploadDocumentFile } from "../../controller/index.js";
 import { uploadAvatarMiddleware, uploadFileMiddleware } from "../../config/cloudinary.js";
 import { AppError } from "../../common/appError.js";
-
+import { validateRequest } from "../../middleware/validate/validate.middleware.js";
+import { validateMessage } from "../../validate/index.js";
 export const router = Router();
 
 router.post(
@@ -69,4 +70,20 @@ router.post(
     }
 );
 
+// router.get("/message-file",
+//     validateRequest(validateMessage),
+//     async (req: Request, res: Response, next: NextFunction) => {
+//         try {
+//             const conversationId = req.params.conversationId;
+//             if (!conversationId) {
+//                 throw new AppError("conversationId là bắt buộc", 400);
+//             }
+
+//             const data = await findMessageFile(conversationId)
+//             return res.success(data, "Gửi hình ảnh thành công");
+//         } catch (error) {
+//             next(error);
+
+//         }
+//     })
 export default router;

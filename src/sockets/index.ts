@@ -2,7 +2,7 @@ import type { Server, Socket } from "socket.io";
 import { addContact, groupContact } from "./contact/index.js";
 import { setUserValueSocket } from "../config/socket.js";
 import { isOnline } from "./me/me.online.js";
-import { chatSocket } from "./chat/chat.socket.js";
+import { callSocket, chatSocket } from "./chat/index.js"
 
 export const initSockets = (io: Server) => {
     // 1. Cấu hình middleware xác thực token cho socket
@@ -11,6 +11,7 @@ export const initSockets = (io: Server) => {
         addContact(io, socket);
         isOnline(io, socket);
         chatSocket(io, socket);
-        groupContact(io, socket)
+        groupContact(io, socket);
+        callSocket(io, socket);
     });
 };

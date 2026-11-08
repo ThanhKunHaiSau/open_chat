@@ -64,7 +64,7 @@ const conversationSchema = new Schema({
         },
         type: {
             type: String,
-            enum: ["text", "image", "file", "sticker"],
+            enum: ["text", "image", "file", "sticker", "call"],
             default: "text",
         },
         createdAt: {

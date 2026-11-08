@@ -321,3 +321,18 @@ export const updateConversationBackground = async (
         throw new AppError(error.message || "Upload hình nền thất bại", error.statusCode || 500);
     }
 };
+
+/**
+ * 7. Lấy chi tiết cuộc trò chuyện kèm populate thông tin đầy đủ
+ */
+export const getConversationById = async (conversationId: string) => {
+    try {
+        const convObjId = new mongoose.Types.ObjectId(conversationId);
+        const conversation = await Conversation.findById(convObjId)
+            .populate("participants", "username avatar gender phone address")
+            .populate("lastMessage.senderId", "username avatar");
+        return conversation;
+    } catch (error: any) {
+        throw new AppError(error.message || "Lấy thông tin cuộc trò chuyện thất bại", error.statusCode || 500);
+    }
+};

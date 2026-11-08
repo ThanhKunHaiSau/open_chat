@@ -7,16 +7,16 @@ import {
     updateConversation,
     updateGroupAvatar,
     updateConversationBackground,
+    getConversationMedia,
 } from "../../controller/index.js";
 import { uploadAvatarMiddleware } from "../../config/cloudinary.js";
 import { AppError } from "../../common/appError.js";
+import { validateRequest } from "../../middleware/validate/validate.middleware.js";
+import { validateMessage } from "../../validate/message.validate.js";
 
 export const router = Router();
 
-/**
- * 1. GET /api/v1/conversations
- * Lấy danh sách tất cả cuộc trò chuyện của user hiện tại
- */
+
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user.userId;
@@ -27,11 +27,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
     }
 });
 
-/**
- * 2. POST /api/v1/conversations
- * Lấy hoặc tạo mới cuộc trò chuyện 1-1 với một người bạn
- * Body: { targetUserId: string }
- */
+
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user.userId;
@@ -73,22 +69,21 @@ router.post("/create-group", async (req: Request, res: Response, next: NextFunct
         next(new AppError(error.message, error.statusCode || 500));
     }
 });
-/**
- * 3. GET /api/v1/conversations/:conversationId/messages
- * Lấy lịch sử tin nhắn của một cuộc trò chuyện (phân trang: page, limit)
- */
-router.get("/:conversationId/messages", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const conversationId = req.params.conversationId as string;
-        const page = Number(req.query.page) || 1;
-        const limit = Number(req.query.limit) || 20;
 
-        const result = await getConversationMessages(conversationId, page, limit);
-        return res.success(result, "Lấy danh sách tin nhắn thành công");
-    } catch (error: any) {
-        next(new AppError(error.message, error.statusCode || 500));
-    }
-});
+router.get("/:conversationId/messages",
+    validateRequest(validateMessage),
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const conversationId = req.params.conversationId as string;
+            const page = Number(req.query.page) || 1;
+            const limit = Number(req.query.limit) || 20;
+
+            const result = await getConversationMessages(conversationId, page, limit);
+            return res.success(result, "Lấy danh sách tin nhắn thành công");
+        } catch (error: any) {
+            next(new AppError(error.message, error.statusCode || 500));
+        }
+    });
 
 router.put("/:id", async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -149,10 +144,7 @@ router.put(
     }
 );
 
-/**
- * 6. PUT /api/v1/conversations/:id/background
- * Upload hình nền (wallpaper) cuộc trò chuyện
- */
+
 router.put(
     "/:id/background",
     uploadAvatarMiddleware.single("file"),
@@ -182,3 +174,16 @@ router.put(
         }
     }
 );
+
+
+router.get("/:conversationId/media", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const conversationId = req.params.conversationId as string;
+        const type = (req.query.type as string) || "all";
+        const userId = req.user.userId;
+        const result = await getConversationMedia(conversationId, type, userId);
+        return res.success(result, "Lấy danh sách tệp phương tiện thành công");
+    } catch (error: any) {
+        next(new AppError(error.message, error.statusCode || 500));
+    }
+});

@@ -1,6 +1,8 @@
 import type { Server, Socket } from "socket.io";
-import { createNoitication } from "../../controller/noitication/noitication.controller.js";
-import Notification from "../../models/noitification.model.js";
+import {
+    createNoitication,
+    cancelFriendRequestNotification,
+} from "../../controller/noitication/noitication.controller.js";
 
 /**
  * @param io Instance từ Server socket.io
@@ -47,17 +49,9 @@ export const addContact = (io: Server, socket: Socket) => {
         };
         const receiverId = data.contactId;
 
-        // Xoá mềm thông báo tương ứng trong DB
+        // Xoá mềm thông báo tương ứng trong DB thông qua Controller
         try {
-            await Notification.updateMany(
-                {
-                    "sender.id": userCurent.id,
-                    "receiver.id": receiverId,
-                    type: "friend_request",
-                    deletedAt: null,
-                },
-                { deletedAt: new Date() }
-            );
+            await cancelFriendRequestNotification(userCurent.id, receiverId);
         } catch (err) {
             console.error("Lỗi khi xoá thông báo:", err);
         }

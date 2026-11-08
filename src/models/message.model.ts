@@ -25,8 +25,24 @@ const messageSchema = new Schema({
     },
     type: {
         type: String,
-        enum: ["text", "image", "file", "sticker"],
+        enum: ["text", "image", "file", "sticker", "call"],
         default: "text",
+    },
+    call: {
+        callType: {
+            type: String,
+            enum: ["video", "audio"],
+            default: "video",
+        },
+        duration: {
+            type: Number,
+            default: 0,
+        },
+        status: {
+            type: String,
+            enum: ["completed", "missed", "rejected", "busy", "failed"],
+            default: "completed",
+        },
     },
     file: {
         url: { type: String, default: null },

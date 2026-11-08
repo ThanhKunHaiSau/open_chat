@@ -106,3 +106,23 @@ export const clearAllNotifications = async (userId: string) => {
         throw new Error(e.message);
     }
 };
+
+/**
+ * 6. Xoá mềm lời mời kết bạn khi người gửi huỷ
+ */
+export const cancelFriendRequestNotification = async (senderId: string, receiverId: string) => {
+    try {
+        const result = await Notification.updateMany(
+            {
+                "sender.id": senderId,
+                "receiver.id": receiverId,
+                type: "friend_request",
+                deletedAt: null,
+            },
+            { deletedAt: new Date() }
+        );
+        return result;
+    } catch (e: any) {
+        throw new Error(e.message);
+    }
+};
