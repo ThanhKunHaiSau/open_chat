@@ -26,4 +26,13 @@ export const uploadAvatarMiddleware = multer({
     },
 });
 
+export const uploadFileMiddleware = multer({
+    storage: storage,
+    limits: { fileSize: 25 * 1024 * 1024 }, // Giới hạn tối đa 25MB cho tệp tài liệu
+    fileFilter: (_req, _file, cb) => {
+        // Cho phép tất cả các loại tệp tài liệu (PDF, Word, Excel, ZIP, RAR, Text, Video, Audio...)
+        cb(null, true);
+    },
+});
+
 export default cloudinary;

@@ -5,12 +5,20 @@ export const handleUploadFile = async (
     fileBuffer: Buffer,
     options?: {
         isAvatar?: boolean;
+        isRawFile?: boolean;
+        originalName?: string;
     }
 ) => {
     const uploadOptions: any = {
         folder: folderName,
-        resource_type: "auto",
+        resource_type: options?.isRawFile ? "raw" : "auto",
     };
+
+    if (options?.originalName) {
+        uploadOptions.filename_override = options.originalName;
+        uploadOptions.use_filename = true;
+        uploadOptions.unique_filename = true;
+    }
 
     // Nếu là avatar thì crop vuông 250x250 và nhận diện khuôn mặt
     if (options?.isAvatar) {
@@ -18,7 +26,7 @@ export const handleUploadFile = async (
             { width: 250, height: 250, crop: "fill", gravity: "face" },
             { format: "webp", quality: "auto" }
         ];
-    } else {
+    } else if (!options?.isRawFile) {
         // Đối với ảnh tin nhắn: Giữ nguyên tỉ lệ gốc của ảnh và tự động nén nhẹ
         uploadOptions.transformation = [
             { quality: "auto", fetch_format: "auto" }
@@ -38,3 +46,4 @@ export const handleUploadFile = async (
 
     return uploadResult;
 };
+
